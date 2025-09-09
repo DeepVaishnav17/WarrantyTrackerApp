@@ -1,0 +1,49 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio working files
+.vs/
+.vscode/
+
+# Resharper / Rider
+*.DotSettings.user
+
+# ASP.NET scaffolding
+ScaffoldingReadMe.txt
+
+# Log files
+*.log
+
+# Environment files
+.env
+appsettings.Development.json
+
+# Publish files
+*.publishsettings
+
+# Package directories
+packages/
+*.nupkg
+*.snupkg
+
+# SQLite / Local DB
+*.mdf
+*.ldf
+
+# Entity Framework migrations backup
+*Migrations/Backup*/
+
+# JetBrains Rider
+.idea/
+
+# Others
+node_modules/
+wwwroot/lib/

@@ -1,0 +1,14 @@
+﻿@page
+@model LogoutModel
+@{
+    ViewData["Title"] = "Log out";
+}
+
+<head>
+    <meta http-equiv="refresh" content="5;url=@Url.Action("Index", "Home")" />
+</head>
+<header>
+    <h1>@ViewData["Title"]</h1>
+    <p>You have successfully logged out of the application.</p>
+    <p>You will be redirected to the home page in 5 seconds...</p>
+</header>
