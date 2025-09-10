@@ -1,0 +1,21 @@
+﻿@model ServiceRecord
+@{
+    ViewData["Title"] = "Delete Service Record";
+}
+
+<h2>Delete Service Record</h2>
+
+<h4>Are you sure you want to delete this record?</h4>
+
+<div>
+    <strong>Service Date:</strong> @Model.ServiceDate.ToShortDateString()<br />
+    <strong>Vendor:</strong> @Model.VendorName<br />
+    <strong>Cost:</strong> @Model.Cost.ToString("C")<br />
+    <strong>Notes:</strong> @Model.Notes
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" asp-route-applianceId="@Model.ApplianceId" class="btn btn-secondary">Cancel</a>
+</form>

@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WarrantyTracker.Data;
 using WarrantyTracker.Models;
+using WarrantyTracker.Repositories;
 
 namespace WarrantyTracker
 {
@@ -43,6 +44,9 @@ namespace WarrantyTracker
 
             services.AddControllersWithViews();
             services.AddRazorPages(); // Identity UI needs this
+
+            services.AddScoped<IApplianceRepository, SQLApplianceRepository>();
+            services.AddScoped<IServiceRecordRepository, SQLServiceRecordRepository>();
         }
 
 

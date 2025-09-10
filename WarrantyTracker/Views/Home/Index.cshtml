@@ -1,5 +1,20 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Identity
+@using WarrantyTracker.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+
+@{
     ViewData["Title"] = "Home";
+    ApplicationUser currentUser = null;
+    string displayName = string.Empty;
+
+    if (SignInManager.IsSignedIn(User))
+    {
+        currentUser = UserManager.GetUserAsync(User).Result; // sync because you don’t want async
+        displayName = !string.IsNullOrWhiteSpace(currentUser?.FullName)
+            ? currentUser.FullName
+            : (currentUser?.Email ?? User.Identity.Name);
+    }
 }
 
 <!-- Hero Section -->
@@ -8,15 +23,23 @@
         <h1 class="display-4 fw-bold">Welcome to Warranty Tracker!</h1>
         <p class="lead mb-4">Effortlessly manage all your product warranties in one place.</p>
 
-        @if (User.Identity.IsAuthenticated)
+        @if (SignInManager.IsSignedIn(User))
         {
-            <a class="btn btn-success btn-lg me-2" href="/Home/Dashboard">Go to Dashboard</a>
-            <p class="mt-3">Hello, @User.Identity.Name!</p>
+            if (User.IsInRole("Admin"))
+            {
+                <a class="btn btn-danger btn-lg me-2" asp-controller="Admin" asp-action="Index">Admin Dashboard</a>
+            }
+            else if (User.IsInRole("User"))
+            {
+                <a class="btn btn-success btn-lg me-2" asp-controller="Appliances" asp-action="Index">Go to Dashboard</a>
+            }
+
+            <p class="mt-3">Hello, @displayName!</p>
         }
         else
         {
-            <a class="btn btn-light btn-lg me-2" href="/Identity/Account/Register">Get Started</a>
-            <a class="btn btn-outline-light btn-lg" href="/Identity/Account/Login">Login</a>
+            <a class="btn btn-light btn-lg me-2" asp-area="Identity" asp-page="/Account/Register">Get Started</a>
+            <a class="btn btn-outline-light btn-lg" asp-area="Identity" asp-page="/Account/Login">Login</a>
         }
     </div>
 </section>
@@ -54,10 +77,13 @@
 </section>
 
 <!-- Info Section -->
+@if (!User.Identity.IsAuthenticated)
+{
 <section class="bg-light py-5">
     <div class="container text-center">
         <h2 class="mb-4">Why Choose Warranty Tracker?</h2>
         <p class="lead mb-4">Simplify your warranty management, get alerts, and secure your data—all in a user-friendly interface.</p>
-        <a href="/Identity/Account/Register" class="btn btn-primary btn-lg">Get Started Now</a>
+        <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg">Get Started Now</a>
     </div>
 </section>
+}

@@ -1,0 +1,94 @@
+﻿@model WarrantyTracker.ViewModels.ApplianceEditViewModel
+@{
+    ViewData["Title"] = "Edit Appliance";
+}
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    <input asp-for="Id" type="hidden" />
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-4">
+            <label asp-for="Brand"></label>
+            <input asp-for="Brand" class="form-control" />
+            <span asp-validation-for="Brand" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-4">
+            <label asp-for="Model"></label>
+            <input asp-for="Model" class="form-control" />
+            <span asp-validation-for="Model" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PurchaseDate"></label>
+        <input asp-for="PurchaseDate" type="date" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+        <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Warranty period (months)</label>
+        <input asp-for="WarrantyPeriodMonths" type="number" class="form-control" min="0" step="1" />
+        <span asp-validation-for="WarrantyPeriodMonths" class="text-danger"></span>
+        <small class="form-text text-muted">Enter warranty period in months (must be zero or positive, app will compute Warranty End Date).</small>
+    </div>
+    
+
+    <div class="form-group">
+        <label asp-for="PurchasePrice"></label>
+        <input asp-for="PurchasePrice" class="form-control" />
+        <span asp-validation-for="PurchasePrice" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Existing Receipt</label>
+        @if (!string.IsNullOrEmpty(Model.ReceiptImagePath))
+        {
+            <div>
+                <a href="@Model.ReceiptImagePath" target="_blank">View</a>
+            </div>
+            <div class="form-check">
+                <input asp-for="RemoveReceipt" class="form-check-input" />
+                <label asp-for="RemoveReceipt" class="form-check-label">Remove receipt</label>
+            </div>
+        }
+        <div class="form-group">
+            <label>Receipt (optional)</label>
+            <input type="file" name="receiptFile" class="form-control-file" />
+        </div>
+        <div class="form-group">
+            <label>Existing Receipt</label>
+            @if (!string.IsNullOrEmpty(Model.ReceiptImagePath))
+            {
+                <div>
+                    <a href="@Model.ReceiptImagePath" target="_blank">View</a>
+                </div>
+                <div class="form-check">
+                    <input asp-for="RemoveReceipt" class="form-check-input" />
+                    <label asp-for="RemoveReceipt" class="form-check-label">Remove receipt</label>
+                </div>
+            }
+
+            <div class="form-group mt-2">
+                <label>Upload new receipt (Optional - JPG/PNG/PDF, max 5 MB)</label>
+                <input asp-for="ReceiptFile" class="form-control-file" />
+                <span asp-validation-for="ReceiptFile" class="text-danger"></span>
+            </div>
+        </div>
+
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

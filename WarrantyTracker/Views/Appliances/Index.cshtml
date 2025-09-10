@@ -1,0 +1,65 @@
+﻿@model IEnumerable<Appliance>
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "My Appliances";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Add Appliance</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Purchase Date</th>
+            <th>Warranty Ends</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var a in Model)
+        {
+            string status;
+            var today = DateTime.UtcNow.Date;
+            if (a.WarrantyEndDate < today) status = "Expired";
+            else if (a.WarrantyEndDate <= today.AddDays(30)) status = "Expiring Soon";
+            else status = "Active";
+
+            <tr>
+                <td>@a.Name</td>
+                <td>@a.Brand</td>
+                <td>@a.Model</td>
+                <td>@a.PurchaseDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                <td>@a.WarrantyEndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                <td>
+                    @if (status == "Active")
+                    {
+                        <span class="badge badge-success">Active</span>
+                    }
+                    else if (status == "Expiring Soon")
+                    {
+
+                        <span class="badge badge-warning">Expiring</span>
+                    }
+                    else
+                    {
+
+                        <span class="badge badge-danger">Expired</span>
+                    }
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@a.Id">Details</a> |
+                    <a asp-action="Edit" asp-route-id="@a.Id">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@a.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

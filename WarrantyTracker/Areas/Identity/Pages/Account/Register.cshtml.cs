@@ -46,26 +46,25 @@ namespace WarrantyTracker.Areas.Identity.Pages.Account
 
         public class InputModel
         {
-            [Required]
-            [EmailAddress]
-            [Display(Name = "Email")]
-            public string Email { get; set; }
-
-            [Required, StringLength(100)]
+            [Required(ErrorMessage = "Please enter your full name.")]
+            [StringLength(100, ErrorMessage = "Full name cannot be longer than 100 characters.")]
             [Display(Name = "Full Name")]
             public string FullName { get; set; }
 
-            [StringLength(200)]
+            [Required(ErrorMessage = "Email is required.")]
+            [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+            public string Email { get; set; }
+
+            [StringLength(200, ErrorMessage = "Address cannot be longer than 200 characters.")]
             public string Address { get; set; }
 
-            [Phone]
             [Display(Name = "Phone Number")]
+            [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Please enter a valid 10-digit mobile number.")]
             public string PhoneNumber { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Password is required.")]
             [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
             [DataType(DataType.Password)]
-            [Display(Name = "Password")]
             public string Password { get; set; }
 
             [DataType(DataType.Password)]
@@ -73,6 +72,8 @@ namespace WarrantyTracker.Areas.Identity.Pages.Account
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
         }
+
+
 
         public async Task OnGetAsync(string returnUrl = null)
         {
@@ -101,6 +102,9 @@ namespace WarrantyTracker.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
+                    // By default every new user is "User"
+                    _userManager.AddToRoleAsync(user, "User").Wait();
+
                     _logger.LogInformation("User created a new account with password.");
 
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);

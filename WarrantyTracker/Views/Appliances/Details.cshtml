@@ -1,0 +1,70 @@
+﻿@model Appliance
+
+@{
+    ViewData["Title"] = "Appliance Details";
+}
+
+<h2>Appliance Details</h2>
+
+<div>
+    <h4>@Model.Name (@Model.Brand @Model.Model)</h4>
+    <dl class="row">
+        <dt class="col-sm-2">Purchase Date</dt>
+        <dd class="col-sm-10">@Model.PurchaseDate.ToShortDateString()</dd>
+
+        <dt class="col-sm-2">Warranty End Date</dt>
+        <dd class="col-sm-10">@Model.WarrantyEndDate.ToShortDateString()</dd>
+
+        <dt class="col-sm-2">Purchase Price</dt>
+        <dd class="col-sm-10">@(Model.PurchasePrice?.ToString("C") ?? "Not provided")</dd>
+    </dl>
+</div>
+
+<hr />
+
+<h4>Service Records</h4>
+<p>
+    <a asp-controller="ServiceRecords" asp-action="Create" asp-route-applianceId="@Model.Id" class="btn btn-primary">
+        Add Service Record
+    </a>
+</p>
+
+@if (Model.ServiceRecords != null && Model.ServiceRecords.Any())
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Vendor</th>
+                <th>Contact</th>
+                <th>Cost</th>
+                <th>Notes</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in Model.ServiceRecords)
+            {
+                <tr>
+                    <td>@record.ServiceDate.ToShortDateString()</td>
+                    <td>@record.VendorName</td>
+                    <td>@record.VendorContact</td>
+                    <td>@record.Cost.ToString("C")</td>
+                    <td>@record.Notes</td>
+                    <td>
+                        <a asp-controller="ServiceRecords" asp-action="Edit" asp-route-id="@record.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <a asp-controller="ServiceRecords" asp-action="Delete" asp-route-id="@record.Id" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No service records available for this appliance.</p>
+}
+
+<p>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</p>

@@ -5,6 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Migrations\20250909132941_AddApplianceTable.cs" />
+    <Compile Remove="Migrations\20250909132941_AddApplianceTable.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="wwwroot\login-banner-1.webp" />
   </ItemGroup>
 

@@ -1,0 +1,44 @@
+﻿@model IEnumerable<ServiceRecord>
+@{
+    ViewData["Title"] = "Service Records";
+    var appliance = ViewBag.Appliance;
+}
+
+<h2>Service Records for @appliance.Name (@appliance.Brand @appliance.Model)</h2>
+
+<p>
+    <a asp-action="Create" asp-route-applianceId="@appliance.Id" class="btn btn-primary">Add New Record</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Service Date</th>
+            <th>Vendor</th>
+            <th>Contact</th>
+            <th>Cost</th>
+            <th>Notes</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var record in Model)
+        {
+            <tr>
+                <td>@record.ServiceDate.ToShortDateString()</td>
+                <td>@record.VendorName</td>
+                <td>@record.VendorContact</td>
+                <td>@record.Cost.ToString("C")</td>
+                <td>@record.Notes</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@record.Id" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@record.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p>
+    <a asp-controller="Appliances" asp-action="Index" class="btn btn-secondary">Back to Appliances</a>
+</p>

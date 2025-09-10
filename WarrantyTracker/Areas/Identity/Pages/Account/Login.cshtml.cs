@@ -43,17 +43,20 @@ namespace WarrantyTracker.Areas.Identity.Pages.Account
 
         public class InputModel
         {
-            [Required]
-            [EmailAddress]
+            [Required(ErrorMessage = "Please enter your email address.")]
+            [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+            [StringLength(100, ErrorMessage = "Email cannot be longer than 100 characters.")]
             public string Email { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Please enter your password.")]
             [DataType(DataType.Password)]
+            [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
             public string Password { get; set; }
 
             [Display(Name = "Remember me?")]
             public bool RememberMe { get; set; }
         }
+
 
         public async Task OnGetAsync(string returnUrl = null)
         {

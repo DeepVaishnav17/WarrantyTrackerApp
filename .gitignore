@@ -47,3 +47,6 @@ packages/
 # Others
 node_modules/
 wwwroot/lib/
+
+# uploads & generated
+wwwroot/uploads/
