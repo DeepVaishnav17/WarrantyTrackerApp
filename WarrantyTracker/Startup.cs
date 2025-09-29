@@ -6,13 +6,17 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using WarrantyTracker.Data;
 using WarrantyTracker.Models;
 using WarrantyTracker.Repositories;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using WarrantyTracker.Services;
 
 namespace WarrantyTracker
 {
@@ -21,6 +25,28 @@ namespace WarrantyTracker
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+        }
+        // In your Startup.cs or Program.cs (seeding admin user)
+        private async Task SeedAdminUser(UserManager<ApplicationUser> userManager)
+        {
+            string adminEmail = "deepvaishnav207@gmail.com";
+            string adminPassword = "Admin@123"; // you can keep strong password
+
+            if (await userManager.FindByEmailAsync(adminEmail) == null)
+            {
+                var adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    FullName = "Deep Vaishnav"
+                };
+
+                var result = await userManager.CreateAsync(adminUser, adminPassword);
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                }
+            }
         }
 
 
@@ -47,6 +73,10 @@ namespace WarrantyTracker
 
             services.AddScoped<IApplianceRepository, SQLApplianceRepository>();
             services.AddScoped<IServiceRecordRepository, SQLServiceRecordRepository>();
+
+
+            // for email
+            services.AddTransient<IEmailSender, EmailSender>();
         }
 
 
@@ -78,6 +108,19 @@ namespace WarrantyTracker
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapRazorPages(); // 🔑 Identity UI
             });
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    RoleSeeder.Seed(services);
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Startup>>();
+                    logger.LogError(ex, "An error occurred while seeding the database.");
+                }
+            }
         }
     }
 }

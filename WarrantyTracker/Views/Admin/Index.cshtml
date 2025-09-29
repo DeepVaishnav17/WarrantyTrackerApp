@@ -1,0 +1,94 @@
+﻿@using WarrantyTracker.Models
+@model WarrantyTracker.Controllers.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h1>Admin Dashboard</h1>
+
+<div class="mb-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card p-3">
+                <h5>Total Users</h5>
+                <p class="display-6">@Model.TotalUsers</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <h5>Total Appliances</h5>
+                <p class="display-6">@Model.TotalAppliances</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <h5>Total Service Records</h5>
+                <p class="display-6">@Model.TotalServiceRecords</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<h3>Users</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Roles</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Model.Users.Count; i++)
+        {
+            var u = Model.Users[i];
+            <tr>
+                <td>@(i + 1)</td>
+                <td>@u.FullName</td>
+                <td>@u.Email</td>
+                <td>@u.PhoneNumber</td>
+                <td>--</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<hr />
+
+<h3>Quick Charts</h3>
+<div class="row">
+    <div class="col-md-6">
+        <canvas id="summaryChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var ctx = document.getElementById('summaryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Users', 'Appliances', 'Service Records'],
+            datasets: [{
+                label: 'Counts',
+                data: [@Model.TotalUsers, @Model.TotalAppliances, @Model.TotalServiceRecords],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
