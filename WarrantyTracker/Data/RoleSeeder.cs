@@ -27,14 +27,15 @@ namespace WarrantyTracker.Data
         private static void SeedAdmin(IServiceProvider serviceProvider)
         {
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var adminEmail = "deepvaishnav207@gmail.com";
+            var adminName = "Admin";
+            var adminEmail = "admin@warranty.com";
             var admin = userManager.FindByEmailAsync(adminEmail).Result;
 
             if (admin == null)
             {
                 var adminUser = new ApplicationUser
                 {
-                    UserName = adminEmail,
+                    UserName = adminName,
                     Email = adminEmail,
                     FullName = "System Admin"
                 };

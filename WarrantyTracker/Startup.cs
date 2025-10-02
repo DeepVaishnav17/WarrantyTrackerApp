@@ -15,8 +15,6 @@ using Microsoft.Extensions.Logging;
 using WarrantyTracker.Data;
 using WarrantyTracker.Models;
 using WarrantyTracker.Repositories;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using WarrantyTracker.Services;
 
 namespace WarrantyTracker
 {
@@ -26,29 +24,6 @@ namespace WarrantyTracker
         {
             Configuration = configuration;
         }
-        // In your Startup.cs or Program.cs (seeding admin user)
-        private async Task SeedAdminUser(UserManager<ApplicationUser> userManager)
-        {
-            string adminEmail = "deepvaishnav207@gmail.com";
-            string adminPassword = "Admin@123"; // you can keep strong password
-
-            if (await userManager.FindByEmailAsync(adminEmail) == null)
-            {
-                var adminUser = new ApplicationUser
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    FullName = "Deep Vaishnav"
-                };
-
-                var result = await userManager.CreateAsync(adminUser, adminPassword);
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                }
-            }
-        }
-
 
         public IConfiguration Configuration { get; }
 
@@ -74,9 +49,6 @@ namespace WarrantyTracker
             services.AddScoped<IApplianceRepository, SQLApplianceRepository>();
             services.AddScoped<IServiceRecordRepository, SQLServiceRecordRepository>();
 
-
-            // for email
-            services.AddTransient<IEmailSender, EmailSender>();
         }
 
 

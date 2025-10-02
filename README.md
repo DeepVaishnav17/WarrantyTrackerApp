@@ -10,6 +10,7 @@ Update-Database
 Check Data/RoleSeeder.cs
 
 ```shell
-Email = "admin@warranty.com";
+Name = "Admin"
+Email = "admin@warranty.com"
 Password = "Admin@123"
 ```
