@@ -8,13 +8,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - WarrantyTracker</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+
+    <style>
+        /* Flex layout for sticky footer */
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f4f7f9;
+        }
+
+        main {
+            flex: 1 0 auto;
+        }
+
+        /* Navbar */
+        .custom-navbar {
+            background: linear-gradient(90deg, #4e54c8, #8f94fb); /* purple-blue gradient */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        /* Brand */
+        .custom-brand {
+            color: #ffd700; /* Gold */
+            font-weight: 700;
+            font-size: 1.6rem;
+            transition: color 0.3s;
+        }
+
+            .custom-brand:hover {
+                color: #ffffff;
+                text-decoration: none;
+            }
+
+        /* Nav links */
+        .custom-nav-link {
+            color: #ffffff;
+            margin-right: 0.5rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: color 0.3s, background-color 0.3s, transform 0.2s;
+        }
+
+            .custom-nav-link:hover {
+                color: #4e54c8; /* dark blue text */
+                background-color: #ffd700; /* gold background */
+                text-decoration: none;
+                transform: translateY(-2px);
+            }
+
+        .nav-item .active {
+            color: #ffd700 !important;
+            font-weight: bold;
+        }
+
+        /* Navbar toggler for mobile */
+        .navbar-light .navbar-toggler {
+            border-color: #ffd700;
+        }
+
+        .navbar-light .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255,215,0,1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/ %3E%3C/svg%3E");
+        }
+
+        /* Footer */
+        .custom-footer {
+            background-color: #4e54c8;
+            color: #ffffff;
+            padding: 20px 0;
+            text-align: center;
+            flex-shrink: 0;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        }
+
+            .custom-footer a {
+                color: #ffd700;
+                text-decoration: none;
+                font-weight: 500;
+            }
+
+                .custom-footer a:hover {
+                    color: #ffffff;
+                    text-decoration: underline;
+                }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm custom-navbar mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WarrantyTracker</a>
+                <a class="navbar-brand custom-brand" asp-area="" asp-controller="Home" asp-action="Index">WarrantyTracker</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -23,21 +112,29 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link custom-nav-link" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link custom-nav-link" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
 
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Appliances" asp-action="Index">My Appliances</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Profile" asp-action="Index">Profile</a>
-                            </li>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link custom-nav-link" asp-controller="Admin" asp-action="Index">Admin Dashboard</a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link custom-nav-link" asp-controller="Appliances" asp-action="Index">My Appliances</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link custom-nav-link" asp-controller="Profile" asp-action="Index">Profile</a>
+                                </li>
+                            }
                         }
                     </ul>
 
@@ -46,7 +143,7 @@
                         <ul class="navbar-nav ms-auto">
                             <li class="nav-item">
                                 <form method="post" asp-area="Identity" asp-page="/Account/Logout" class="form-inline">
-                                    <button type="submit" class="btn btn-outline-danger">Logout</button>
+                                    <button type="submit" class="btn btn-outline-warning">Logout</button>
                                 </form>
                             </li>
                         </ul>
@@ -56,16 +153,12 @@
         </nav>
     </header>
 
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <main class="container">
+        @RenderBody()
+    </main>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - WarrantyTracker - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
+    <footer class="custom-footer">
+        &copy; 2025 - WarrantyTracker - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
