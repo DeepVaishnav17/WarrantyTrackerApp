@@ -46,7 +46,7 @@ packages/
 
 # Others
 node_modules/
-wwwroot/lib/
 
 # uploads & generated
-wwwroot/uploads/
+WarrantyTracker/wwwroot/uploads/
+
