@@ -1,11 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using WarrantyTracker.Hubs;
 using WarrantyTracker.Models;
 using WarrantyTracker.Repositories;
 using WarrantyTracker.ViewModels;
@@ -18,15 +21,18 @@ namespace WarrantyTracker.Controllers
         private readonly IApplianceRepository _applianceRepo;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _env;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
         public AppliancesController(
             IApplianceRepository applianceRepo,
             UserManager<ApplicationUser> userManager,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IHubContext<NotificationHub> hubContext)
         {
             _applianceRepo = applianceRepo;
             _userManager = userManager;
             _env = env;
+            _hubContext = hubContext;
         }
 
         // GET: /Appliances
@@ -122,6 +128,13 @@ namespace WarrantyTracker.Controllers
                 appliance.ReceiptImagePath = Path.Combine("/uploads/receipts", fileName).Replace('\\', '/');
             }
 
+            // compute warranty end date
+            if (vm.WarrantyPeriodMonths > 0)
+                appliance.WarrantyEndDate = vm.PurchaseDate.AddMonths(vm.WarrantyPeriodMonths);
+
+            // set LastWarrantyStatus immediately
+            appliance.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(appliance.WarrantyEndDate);
+
             // repository Add will set CreatedAt & UpdatedAt (ensure your Add method does that)
             _applianceRepo.Add(appliance);
 
@@ -159,7 +172,7 @@ namespace WarrantyTracker.Controllers
         // POST: /Appliances/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(ApplianceEditViewModel vm, IFormFile receiptFile)
+        public async Task<IActionResult> Edit(ApplianceEditViewModel vm, IFormFile receiptFile)
         {
             if (!ModelState.IsValid)
             {
@@ -187,6 +200,9 @@ namespace WarrantyTracker.Controllers
                 vm.ReceiptImagePath = existing.ReceiptImagePath;
                 return View(vm);
             }
+
+            DateTime expiryDate = existing.PurchaseDate.AddMonths(existing.WarrantyPeriodMonths);
+            string oldStatus = existing.LastWarrantyStatus;
 
             // apply changes to tracked entity
             existing.Name = vm.Name;
@@ -259,8 +275,38 @@ namespace WarrantyTracker.Controllers
                 }
             }
 
+            existing.WarrantyEndDate = computedEnd;
+
+            // update LastWarrantyStatus immediately
+            existing.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(existing.WarrantyEndDate);
+
             // use existing Update method in repository (it handles UpdatedAt too)
             _applianceRepo.Update(existing);
+            oldStatus = existing.LastWarrantyStatus;
+            var oldEndDate = existing.WarrantyEndDate;
+
+            // apply changes
+            existing.Name = vm.Name;
+            existing.Brand = vm.Brand;
+            existing.Model = vm.Model;
+            existing.PurchaseDate = vm.PurchaseDate;
+            existing.WarrantyEndDate = computedEnd;
+            existing.PurchasePrice = vm.PurchasePrice;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            // update status immediately
+            existing.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(existing.WarrantyEndDate);
+
+            // repository update
+            _applianceRepo.Update(existing);
+
+            // send notification if either status or end date changed
+            if (oldStatus != existing.LastWarrantyStatus || oldEndDate != existing.WarrantyEndDate)
+            {
+                string message = $"{existing.Name} warranty updated: {oldEndDate:dd MMM yyyy} → {existing.WarrantyEndDate:dd MMM yyyy} ({existing.LastWarrantyStatus})";
+                await _hubContext.Clients.User(existing.UserId).SendAsync("ReceiveNotification", message);
+            }
+
 
             TempData["SuccessMessage"] = "Appliance updated successfully.";
             return RedirectToAction(nameof(Index));

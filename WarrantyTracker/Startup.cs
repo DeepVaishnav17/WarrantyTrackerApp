@@ -13,8 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WarrantyTracker.Data;
+using WarrantyTracker.Hubs;
 using WarrantyTracker.Models;
 using WarrantyTracker.Repositories;
+using WarrantyTracker.Services;
 
 namespace WarrantyTracker
 {
@@ -48,6 +50,8 @@ namespace WarrantyTracker
 
             services.AddScoped<IApplianceRepository, SQLApplianceRepository>();
             services.AddScoped<IServiceRecordRepository, SQLServiceRecordRepository>();
+            services.AddSignalR(); // Add SignalR
+            services.AddScoped<INotificationService, NotificationService>();
 
         }
 
@@ -79,6 +83,7 @@ namespace WarrantyTracker
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapRazorPages(); // 🔑 Identity UI
+                endpoints.MapHub<NotificationHub>("/notificationHub"); // Map hub
             });
             using (var scope = app.ApplicationServices.CreateScope())
             {

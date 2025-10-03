@@ -4,6 +4,13 @@
 }
 <h2>@ViewData["Title"]</h2>
 
+@if (TempData["Notification"] != null)
+{
+    <div class="alert alert-info">
+        @TempData["Notification"]
+    </div>
+}
+
 <form asp-action="Edit" method="post" enctype="multipart/form-data">
     <input asp-for="Id" type="hidden" />
     <div asp-validation-summary="All" class="text-danger"></div>

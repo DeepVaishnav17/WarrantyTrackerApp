@@ -26,12 +26,6 @@
     <tbody>
         @foreach (var a in Model)
         {
-            string status;
-            var today = DateTime.UtcNow.Date;
-            if (a.WarrantyEndDate < today) status = "Expired";
-            else if (a.WarrantyEndDate <= today.AddDays(30)) status = "Expiring Soon";
-            else status = "Active";
-
             <tr>
                 <td>@a.Name</td>
                 <td>@a.Brand</td>
@@ -39,21 +33,20 @@
                 <td>@a.PurchaseDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
                 <td>@a.WarrantyEndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
                 <td>
-                    @if (status == "Active")
+                    @if (a.LastWarrantyStatus == "Active")
                     {
                         <span class="badge badge-success">Active</span>
                     }
-                    else if (status == "Expiring Soon")
+                    else if (a.LastWarrantyStatus == "Expiring Soon")
                     {
-
                         <span class="badge badge-warning">Expiring</span>
                     }
                     else
                     {
-
                         <span class="badge badge-danger">Expired</span>
                     }
                 </td>
+
                 <td>
                     <a asp-action="Details" asp-route-id="@a.Id">Details</a> |
                     <a asp-action="Edit" asp-route-id="@a.Id">Edit</a> |

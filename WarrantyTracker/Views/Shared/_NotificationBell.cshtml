@@ -1,0 +1,30 @@
+﻿<div class="dropdown">
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="notifBell" data-bs-toggle="dropdown">
+        🔔 <span id="notifCount" class="badge badge-danger">0</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" id="notifList">
+        <!-- Notifications appear here -->
+    </ul>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/notificationHub")
+        .build();
+
+    let notifCount = 0;
+
+    connection.on("ReceiveNotification", function(message) {
+        notifCount++;
+        document.getElementById("notifCount").innerText = notifCount;
+
+        const list = document.getElementById("notifList");
+        const item = document.createElement("li");
+        item.className = "dropdown-item";
+        item.innerText = message;
+        list.prepend(item);
+    });
+
+    connection.start().catch(err => console.error(err.toString()));
+</script>

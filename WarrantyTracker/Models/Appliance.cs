@@ -48,8 +48,20 @@ namespace WarrantyTracker.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public string LastWarrantyStatus { get; set; } = "Active";
 
         // Navigation
         public ICollection<ServiceRecord> ServiceRecords { get; set; }
+
+        public static string CalculateWarrantyStatus(DateTime warrantyEndDate)
+        {
+            var today = DateTime.UtcNow.Date;
+            var daysLeft = (int)(warrantyEndDate - today).TotalDays;
+
+            if (daysLeft > 31) return "Active";
+            else if (daysLeft >= 0) return "Expiring Soon";
+            else return "Expired";
+        }
+
     }
 }

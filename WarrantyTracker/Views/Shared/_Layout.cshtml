@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
     <style>
-        /* Flex layout for sticky footer */
         html, body {
             height: 100%;
             margin: 0;
@@ -30,13 +29,12 @@
 
         /* Navbar */
         .custom-navbar {
-            background: linear-gradient(90deg, #4e54c8, #8f94fb); /* purple-blue gradient */
+            background: linear-gradient(90deg, #4e54c8, #8f94fb);
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
 
-        /* Brand */
         .custom-brand {
-            color: #ffd700; /* Gold */
+            color: #ffd700;
             font-weight: 700;
             font-size: 1.6rem;
             transition: color 0.3s;
@@ -47,18 +45,17 @@
                 text-decoration: none;
             }
 
-        /* Nav links */
         .custom-nav-link {
             color: #ffffff;
             margin-right: 0.5rem;
             padding: 6px 12px;
             border-radius: 6px;
-            transition: color 0.3s, background-color 0.3s, transform 0.2s;
+            transition: 0.2s;
         }
 
             .custom-nav-link:hover {
-                color: #4e54c8; /* dark blue text */
-                background-color: #ffd700; /* gold background */
+                color: #4e54c8;
+                background-color: #ffd700;
                 text-decoration: none;
                 transform: translateY(-2px);
             }
@@ -68,13 +65,12 @@
             font-weight: bold;
         }
 
-        /* Navbar toggler for mobile */
         .navbar-light .navbar-toggler {
             border-color: #ffd700;
         }
 
         .navbar-light .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255,215,0,1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/ %3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255,215,0,1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
         }
 
         /* Footer */
@@ -111,29 +107,31 @@
 
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link custom-nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link custom-nav-link" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link custom-nav-link" asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="nav-item"><a class="nav-link custom-nav-link" asp-controller="Home" asp-action="Privacy">Privacy</a></li>
 
                         @if (User.Identity.IsAuthenticated)
                         {
                             @if (User.IsInRole("Admin"))
                             {
-                                <li class="nav-item">
-                                    <a class="nav-link custom-nav-link" asp-controller="Admin" asp-action="Index">Admin Dashboard</a>
-                                </li>
+                                <li class="nav-item"><a class="nav-link custom-nav-link" asp-controller="Admin" asp-action="Index">Admin Dashboard</a></li>
                             }
                             else
                             {
-                                <li class="nav-item">
-                                    <a class="nav-link custom-nav-link" asp-controller="Appliances" asp-action="Index">My Appliances</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link custom-nav-link" asp-controller="Profile" asp-action="Index">Profile</a>
-                                </li>
+                                <li class="nav-item"><a class="nav-link custom-nav-link" asp-controller="Appliances" asp-action="Index">My Appliances</a></li>
+
+                                @* <!-- Notification Bell -->
+                                <li class="nav-item dropdown">
+                                    <button class="btn btn-secondary dropdown-toggle position-relative" type="button" id="notifBell" data-bs-toggle="dropdown">
+                                        🔔
+                                        <span id="notifCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle p-1 rounded-circle">0</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" id="notifList" style="width: 300px; max-height: 400px; overflow-y: auto;">
+                                        <li class="dropdown-item text-muted">No notifications</li>
+                                    </ul>
+                                </li> *@
+
+                                <li class="nav-item"><a class="nav-link custom-nav-link" asp-controller="Profile" asp-action="Index">Profile</a></li>
                             }
                         }
                     </ul>
@@ -153,9 +151,7 @@
         </nav>
     </header>
 
-    <main class="container">
-        @RenderBody()
-    </main>
+    <main class="container">@RenderBody()</main>
 
     <footer class="custom-footer">
         &copy; 2025 - WarrantyTracker - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
@@ -164,6 +160,62 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- SignalR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .withAutomaticReconnect()
+            .build();
+
+        let notifCount = 0;
+        let notifItems = [];
+
+        connection.on("ReceiveNotification", function(message) {
+            notifCount++;
+            notifItems.unshift(message);
+            document.getElementById("notifCount").innerText = notifCount;
+            renderDropdown();
+        });
+
+        function renderDropdown() {
+            const list = document.getElementById("notifList");
+            list.innerHTML = "";
+
+            if (notifItems.length === 0) {
+                const empty = document.createElement("li");
+                empty.className = "dropdown-item text-muted";
+                empty.innerText = "No notifications";
+                list.appendChild(empty);
+                return;
+            }
+
+            notifItems.forEach(msg => {
+                const item = document.createElement("li");
+                item.className = "dropdown-item";
+                item.innerText = msg;
+                list.appendChild(item);
+            });
+        }
+
+        // Reset count when bell clicked
+        document.getElementById("notifBell").addEventListener("click", function() {
+            notifCount = 0;
+            document.getElementById("notifCount").innerText = notifCount;
+        });
+
+        connection.start()
+            .then(() => console.log("SignalR Connected"))
+            .catch(err => console.error(err.toString()));
+
+        // Optional: Trigger server-side check on page load
+        $(document).ready(function() {
+            $.get("/Notification/CheckNotifications")
+             .fail(err => console.error("Error checking notifications:", err));
+        });
+    </script>
+
     @RenderSection("Scripts", required: false)
 </body>
 </html>
