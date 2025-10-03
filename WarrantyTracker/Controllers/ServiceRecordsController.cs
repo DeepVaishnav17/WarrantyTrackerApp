@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WarrantyTracker.Models;
@@ -27,9 +28,15 @@ namespace WarrantyTracker.Controllers
                 return NotFound();
 
             ViewBag.Appliance = appliance;
-            var records = _serviceRepo.GetByAppliance(applianceId);
+
+            // fetch and order records (latest first)
+            var records = _serviceRepo.GetByAppliance(applianceId)
+                                      .OrderByDescending(r => r.ServiceDate)
+                                      .ToList();
+
             return View(records);
         }
+
 
         // GET: /ServiceRecords/Create?applianceId=1
         public IActionResult Create(int applianceId)
@@ -37,10 +44,8 @@ namespace WarrantyTracker.Controllers
             var appliance = _applianceRepo.GetById(applianceId);
             if (appliance == null) return NotFound();
 
-            // supply purchase date to the view for client-side min attribute
-            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("yyyy-MM-dd");
+            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("dd-MM-yyyy");
 
-            // default service date to today
             var vm = new ServiceRecordCreateViewModel
             {
                 ApplianceId = applianceId,
@@ -58,17 +63,16 @@ namespace WarrantyTracker.Controllers
             var appliance = _applianceRepo.GetById(vm.ApplianceId);
             if (appliance == null) return NotFound();
 
-            // server-side validation
             var today = DateTime.Today;
+
             if (vm.ServiceDate > today)
-            {
                 ModelState.AddModelError(nameof(vm.ServiceDate), "Service date cannot be in the future.");
-            }
-            // allow same-day service: ServiceDate < PurchaseDate is invalid; equality is allowed
+
             if (vm.ServiceDate < appliance.PurchaseDate.Date)
-            {
-                ModelState.AddModelError(nameof(vm.ServiceDate), $"Service date cannot be earlier than appliance purchase date ({appliance.PurchaseDate:yyyy-MM-dd}).");
-            }
+                ModelState.AddModelError(nameof(vm.ServiceDate), $"Service date cannot be earlier than appliance purchase date ({appliance.PurchaseDate:dd-MM-yyyy}).");
+
+            if (vm.Cost <= 0)
+                ModelState.AddModelError(nameof(vm.Cost), "Service cost must be greater than 0.");
 
             if (ModelState.IsValid)
             {
@@ -86,11 +90,9 @@ namespace WarrantyTracker.Controllers
                 return RedirectToAction("Index", new { applianceId = vm.ApplianceId });
             }
 
-            // re-add purchase date for view
-            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("yyyy-MM-dd");
+            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("dd-MM-yyyy");
             return View(vm);
         }
-
 
         // GET: /ServiceRecords/Edit/5
         public IActionResult Edit(int id)
@@ -101,7 +103,7 @@ namespace WarrantyTracker.Controllers
             var appliance = _applianceRepo.GetById(record.ApplianceId);
             if (appliance == null) return NotFound();
 
-            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("yyyy-MM-dd");
+            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("dd-MM-yyyy");
 
             var vm = new ServiceRecordEditViewModel
             {
@@ -126,14 +128,15 @@ namespace WarrantyTracker.Controllers
             if (appliance == null) return NotFound();
 
             var today = DateTime.Today;
+
             if (vm.ServiceDate > today)
-            {
                 ModelState.AddModelError(nameof(vm.ServiceDate), "Service date cannot be in the future.");
-            }
+
             if (vm.ServiceDate < appliance.PurchaseDate.Date)
-            {
-                ModelState.AddModelError(nameof(vm.ServiceDate), $"Service date cannot be earlier than appliance purchase date ({appliance.PurchaseDate:yyyy-MM-dd}).");
-            }
+                ModelState.AddModelError(nameof(vm.ServiceDate), $"Service date cannot be earlier than appliance purchase date ({appliance.PurchaseDate:dd-MM-yyyy}).");
+
+            if (vm.Cost <= 0)
+                ModelState.AddModelError(nameof(vm.Cost), "Service cost must be greater than 0.");
 
             if (ModelState.IsValid)
             {
@@ -152,10 +155,9 @@ namespace WarrantyTracker.Controllers
                 return RedirectToAction("Index", new { applianceId = vm.ApplianceId });
             }
 
-            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("yyyy-MM-dd");
+            ViewBag.PurchaseDate = appliance.PurchaseDate.ToString("dd-MM-yyyy");
             return View(vm);
         }
-
 
         // GET: /ServiceRecords/Delete/5
         public IActionResult Delete(int id)
@@ -180,6 +182,5 @@ namespace WarrantyTracker.Controllers
             _serviceRepo.Delete(id);
             return RedirectToAction("Index", new { applianceId });
         }
-
     }
 }

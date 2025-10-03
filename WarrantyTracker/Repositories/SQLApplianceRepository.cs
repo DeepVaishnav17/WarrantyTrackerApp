@@ -34,19 +34,13 @@ namespace WarrantyTracker.Repositories
         public Appliance GetById(int id)
         {
             return _db.Appliances
-                .Include(a => a.ServiceRecords)   // 👈 eager load related records
+                .Include(a => a.ServiceRecords)   // eager load related records
                 .FirstOrDefault(a => a.Id == id);
         }
 
         public void Add(Appliance appliance)
         {
             if (appliance == null) throw new ArgumentNullException(nameof(appliance));
-
-            // compute warranty end date if WarrantyPeriodMonths provided
-            if (appliance.WarrantyPeriodMonths > 0)
-            {
-                appliance.WarrantyEndDate = appliance.PurchaseDate.AddMonths(appliance.WarrantyPeriodMonths);
-            }
 
             var now = DateTime.UtcNow;
             appliance.CreatedAt = now;
@@ -63,28 +57,19 @@ namespace WarrantyTracker.Repositories
             var existing = _db.Appliances.SingleOrDefault(a => a.Id == appliance.Id);
             if (existing == null) throw new InvalidOperationException("Appliance not found.");
 
-            // update only allowed fields (keep navigation & immutables safe)
+            // update only allowed fields (controller already computed WarrantyEndDate)
             existing.Name = appliance.Name;
             existing.Brand = appliance.Brand;
             existing.Model = appliance.Model;
             existing.PurchaseDate = appliance.PurchaseDate;
-
-            if (appliance.WarrantyPeriodMonths > 0)
-            {
-                existing.WarrantyEndDate = appliance.PurchaseDate.AddMonths(appliance.WarrantyPeriodMonths);
-            }
-            else
-            {
-                existing.WarrantyEndDate = appliance.WarrantyEndDate;
-            }
-
+            existing.WarrantyEndDate = appliance.WarrantyEndDate;
             existing.PurchasePrice = appliance.PurchasePrice;
             existing.ReceiptImagePath = appliance.ReceiptImagePath;
+            existing.LastWarrantyStatus = appliance.LastWarrantyStatus;
             existing.UpdatedAt = DateTime.UtcNow;
 
             _db.SaveChanges();
         }
-
 
         public void Delete(int id)
         {
@@ -127,6 +112,5 @@ namespace WarrantyTracker.Repositories
             if (appliance == null) throw new ArgumentNullException(nameof(appliance));
             _db.SaveChanges();
         }
-
     }
 }

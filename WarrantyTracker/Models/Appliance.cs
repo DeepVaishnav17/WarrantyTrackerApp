@@ -53,13 +53,16 @@ namespace WarrantyTracker.Models
         // Navigation
         public ICollection<ServiceRecord> ServiceRecords { get; set; }
 
-        public static string CalculateWarrantyStatus(DateTime warrantyEndDate)
+        public static string CalculateWarrantyStatus(DateTime warrantyEndDate, int months)
         {
+            if (months == 0)
+                return "No Warranty";
+
             var today = DateTime.UtcNow.Date;
             var daysLeft = (int)(warrantyEndDate - today).TotalDays;
 
             if (daysLeft > 31) return "Active";
-            else if (daysLeft >= 0) return "Expiring Soon";
+            else if (daysLeft > 0) return "Expiring Soon";
             else return "Expired";
         }
 

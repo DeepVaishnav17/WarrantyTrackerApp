@@ -30,8 +30,17 @@
                 <td>@a.Name</td>
                 <td>@a.Brand</td>
                 <td>@a.Model</td>
-                <td>@a.PurchaseDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
-                <td>@a.WarrantyEndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                <td>@a.PurchaseDate.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)</td>
+                <td>
+                    @if (a.LastWarrantyStatus == "No Warranty")
+                    {
+                        <span>No End Date</span>
+                    }
+                    else
+                    {
+                        @a.WarrantyEndDate.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)
+                    }
+                </td>
                 <td>
                     @if (a.LastWarrantyStatus == "Active")
                     {
@@ -41,9 +50,13 @@
                     {
                         <span class="badge badge-warning">Expiring</span>
                     }
-                    else
+                    else if (a.LastWarrantyStatus == "Expired")
                     {
                         <span class="badge badge-danger">Expired</span>
+                    }
+                    else if (a.LastWarrantyStatus == "No Warranty")
+                    {
+                        <span class="badge badge-secondary">No Warranty</span>
                     }
                 </td>
 

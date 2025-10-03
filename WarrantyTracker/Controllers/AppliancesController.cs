@@ -15,7 +15,7 @@ using WarrantyTracker.ViewModels;
 
 namespace WarrantyTracker.Controllers
 {
-    [Authorize(Roles = "User,Admin")]
+    [Authorize(Roles = "User")]
     public class AppliancesController : Controller
     {
         private readonly IApplianceRepository _applianceRepo;
@@ -35,7 +35,9 @@ namespace WarrantyTracker.Controllers
             _hubContext = hubContext;
         }
 
-        // GET: /Appliances
+        // ===============================
+        // Index
+        // ===============================
         public IActionResult Index()
         {
             var userId = _userManager.GetUserId(User);
@@ -43,13 +45,14 @@ namespace WarrantyTracker.Controllers
             return View(appliances);
         }
 
-        // GET: /Appliances/Details/5
+        // ===============================
+        // Details
+        // ===============================
         public IActionResult Details(int id)
         {
             var appliance = _applianceRepo.GetById(id);
             if (appliance == null) return NotFound();
 
-            // owner check
             var userId = _userManager.GetUserId(User);
             if (appliance.UserId != userId && !User.IsInRole("Admin"))
                 return Forbid();
@@ -57,7 +60,9 @@ namespace WarrantyTracker.Controllers
             return View(appliance);
         }
 
-        // GET: /Appliances/Create
+        // ===============================
+        // Create
+        // ===============================
         public IActionResult Create()
         {
             var vm = new ApplianceCreateViewModel
@@ -67,14 +72,12 @@ namespace WarrantyTracker.Controllers
             return View(vm);
         }
 
-        // POST: /Appliances/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(ApplianceCreateViewModel vm)
         {
             if (!ModelState.IsValid) return View(vm);
 
-            // Map VM -> entity
             var appliance = new Appliance
             {
                 Name = vm.Name,
@@ -82,68 +85,26 @@ namespace WarrantyTracker.Controllers
                 Model = vm.Model,
                 PurchaseDate = vm.PurchaseDate,
                 PurchasePrice = vm.PurchasePrice,
-                // WarrantyEndDate will be computed below if months provided
-                WarrantyEndDate = vm.WarrantyEndDate
+                UserId = _userManager.GetUserId(User)
             };
 
-            // owner
-            appliance.UserId = _userManager.GetUserId(User);
+            // calculate warranty end
+            appliance.WarrantyEndDate = CalculateWarrantyEndDate(vm.PurchaseDate, vm.WarrantyPeriodMonths);
 
-            // compute warranty end date if months provided
-            if (vm.WarrantyPeriodMonths > 0)
-            {
-                appliance.WarrantyEndDate = vm.PurchaseDate.AddMonths(vm.WarrantyPeriodMonths);
-            }
+            // validate and save receipt
+            appliance.ReceiptImagePath = SaveReceipt(vm.ReceiptFile);
 
-            // Receipt file validation & save (same rules as Edit)
-            var receiptFile = vm.ReceiptFile;
-            if (receiptFile != null && receiptFile.Length > 0)
-            {
-                var allowed = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
-                var ext = Path.GetExtension(receiptFile.FileName).ToLowerInvariant();
-                const long maxBytes = 5 * 1024 * 1024; // 5 MB
+            // set warranty status immediately
+            appliance.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(appliance.WarrantyEndDate, vm.WarrantyPeriodMonths);
 
-                if (!allowed.Contains(ext))
-                {
-                    ModelState.AddModelError(nameof(vm.ReceiptFile), "Only JPG, PNG or PDF files are allowed.");
-                    return View(vm);
-                }
-
-                if (receiptFile.Length > maxBytes)
-                {
-                    ModelState.AddModelError(nameof(vm.ReceiptFile), "File too large (max 5 MB).");
-                    return View(vm);
-                }
-
-                var uploadsRoot = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "receipts");
-                if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
-
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(uploadsRoot, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    receiptFile.CopyTo(stream);
-                }
-
-                appliance.ReceiptImagePath = Path.Combine("/uploads/receipts", fileName).Replace('\\', '/');
-            }
-
-            // compute warranty end date
-            if (vm.WarrantyPeriodMonths > 0)
-                appliance.WarrantyEndDate = vm.PurchaseDate.AddMonths(vm.WarrantyPeriodMonths);
-
-            // set LastWarrantyStatus immediately
-            appliance.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(appliance.WarrantyEndDate);
-
-            // repository Add will set CreatedAt & UpdatedAt (ensure your Add method does that)
             _applianceRepo.Add(appliance);
-
             TempData["SuccessMessage"] = "Appliance created successfully.";
             return RedirectToAction(nameof(Index));
         }
 
-
-        // GET: /Appliances/Edit/5
+        // ===============================
+        // Edit
+        // ===============================
         public IActionResult Edit(int id)
         {
             var appliance = _applianceRepo.GetById(id);
@@ -169,15 +130,11 @@ namespace WarrantyTracker.Controllers
             return View(vm);
         }
 
-        // POST: /Appliances/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ApplianceEditViewModel vm, IFormFile receiptFile)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(vm);
-            }
+            if (!ModelState.IsValid) return View(vm);
 
             var existing = _applianceRepo.GetById(vm.Id);
             if (existing == null) return NotFound();
@@ -186,141 +143,49 @@ namespace WarrantyTracker.Controllers
             if (existing.UserId != userId && !User.IsInRole("Admin"))
                 return Forbid();
 
-            // compute warranty end date
-            DateTime computedEnd;
-            if (vm.WarrantyPeriodMonths > 0)
-                computedEnd = vm.PurchaseDate.AddMonths(vm.WarrantyPeriodMonths);
-            else
-                computedEnd = vm.WarrantyEndDate;
-
-            if (computedEnd < vm.PurchaseDate)
-            {
-                ModelState.AddModelError(nameof(vm.WarrantyEndDate),
-                    "Warranty end date cannot be earlier than purchase date.");
-                vm.ReceiptImagePath = existing.ReceiptImagePath;
-                return View(vm);
-            }
-
-            DateTime expiryDate = existing.PurchaseDate.AddMonths(existing.WarrantyPeriodMonths);
-            string oldStatus = existing.LastWarrantyStatus;
-
-            // apply changes to tracked entity
-            existing.Name = vm.Name;
-            existing.Brand = vm.Brand;
-            existing.Model = vm.Model;
-            existing.PurchaseDate = vm.PurchaseDate;
-            existing.WarrantyEndDate = computedEnd;
-            existing.PurchasePrice = vm.PurchasePrice;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            var oldReceiptPath = existing.ReceiptImagePath;
-
-            if (vm.RemoveReceipt)
-            {
-                if (!string.IsNullOrEmpty(oldReceiptPath))
-                {
-                    try
-                    {
-                        var oldPhysical = Path.Combine(_env.WebRootPath ?? "wwwroot",
-                            oldReceiptPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-                        if (System.IO.File.Exists(oldPhysical)) System.IO.File.Delete(oldPhysical);
-                    }
-                    catch { }
-                }
-                existing.ReceiptImagePath = null;
-            }
-
-            // receipt validation & save (same checks as Create)
-            if (receiptFile != null && receiptFile.Length > 0)
-            {
-                var allowed = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
-                var ext = Path.GetExtension(receiptFile.FileName).ToLowerInvariant();
-                const long maxBytes = 5 * 1024 * 1024;
-
-                if (!allowed.Contains(ext))
-                {
-                    ModelState.AddModelError("receiptFile", "Only JPG, PNG or PDF files are allowed.");
-                    vm.ReceiptImagePath = existing.ReceiptImagePath;
-                    return View(vm);
-                }
-
-                if (receiptFile.Length > maxBytes)
-                {
-                    ModelState.AddModelError("receiptFile", "File too large (max 5 MB).");
-                    vm.ReceiptImagePath = existing.ReceiptImagePath;
-                    return View(vm);
-                }
-
-                var uploadsRoot = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "receipts");
-                if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
-
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(uploadsRoot, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    receiptFile.CopyTo(stream);
-                }
-                existing.ReceiptImagePath = Path.Combine("/uploads/receipts", fileName).Replace('\\', '/');
-
-                // delete old file (best-effort)
-                if (!string.IsNullOrEmpty(oldReceiptPath))
-                {
-                    try
-                    {
-                        var oldPhysical = Path.Combine(_env.WebRootPath ?? "wwwroot",
-                            oldReceiptPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-                        if (System.IO.File.Exists(oldPhysical)) System.IO.File.Delete(oldPhysical);
-                    }
-                    catch { }
-                }
-            }
-
-            existing.WarrantyEndDate = computedEnd;
-
-            // update LastWarrantyStatus immediately
-            existing.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(existing.WarrantyEndDate);
-
-            // use existing Update method in repository (it handles UpdatedAt too)
-            _applianceRepo.Update(existing);
-            oldStatus = existing.LastWarrantyStatus;
+            var oldStatus = existing.LastWarrantyStatus;
             var oldEndDate = existing.WarrantyEndDate;
 
-            // apply changes
+            // update fields
             existing.Name = vm.Name;
             existing.Brand = vm.Brand;
             existing.Model = vm.Model;
             existing.PurchaseDate = vm.PurchaseDate;
-            existing.WarrantyEndDate = computedEnd;
             existing.PurchasePrice = vm.PurchasePrice;
+            existing.WarrantyEndDate = CalculateWarrantyEndDate(vm.PurchaseDate, vm.WarrantyPeriodMonths);
             existing.UpdatedAt = DateTime.UtcNow;
 
-            // update status immediately
-            existing.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(existing.WarrantyEndDate);
+            // receipt handling
+            if (vm.RemoveReceipt)
+            {
+                DeleteFile(existing.ReceiptImagePath);
+                existing.ReceiptImagePath = null;
+            }
+            else if (receiptFile != null && receiptFile.Length > 0)
+            {
+                DeleteFile(existing.ReceiptImagePath); // remove old
+                existing.ReceiptImagePath = SaveReceipt(receiptFile);
+            }
 
-            // repository update
+            // update warranty status
+            existing.LastWarrantyStatus = Appliance.CalculateWarrantyStatus(existing.WarrantyEndDate, vm.WarrantyPeriodMonths);
+
             _applianceRepo.Update(existing);
 
-            // send notification if either status or end date changed
+            // send notification if something changed
             if (oldStatus != existing.LastWarrantyStatus || oldEndDate != existing.WarrantyEndDate)
             {
                 string message = $"{existing.Name} warranty updated: {oldEndDate:dd MMM yyyy} → {existing.WarrantyEndDate:dd MMM yyyy} ({existing.LastWarrantyStatus})";
                 await _hubContext.Clients.User(existing.UserId).SendAsync("ReceiveNotification", message);
             }
 
-
             TempData["SuccessMessage"] = "Appliance updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 
-        private int CalculateMonths(DateTime start, DateTime end)
-        {
-            if (end < start) return 0;
-            int months = (end.Year - start.Year) * 12 + end.Month - start.Month;
-            if (end.Day < start.Day) months--;
-            return Math.Max(0, months);
-        }
-
-        // GET: /Appliances/Delete/5
+        // ===============================
+        // Delete
+        // ===============================
         public IActionResult Delete(int id)
         {
             var appliance = _applianceRepo.GetById(id);
@@ -330,10 +195,9 @@ namespace WarrantyTracker.Controllers
             if (appliance.UserId != userId && !User.IsInRole("Admin"))
                 return Forbid();
 
-            return View(appliance); // confirmation page
+            return View(appliance);
         }
 
-        // POST: /Appliances/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
@@ -345,20 +209,78 @@ namespace WarrantyTracker.Controllers
             if (existing.UserId != userId && !User.IsInRole("Admin"))
                 return Forbid();
 
-            // delete receipt file
-            if (!string.IsNullOrEmpty(existing.ReceiptImagePath))
-            {
-                try
-                {
-                    var old = Path.Combine(_env.WebRootPath ?? "wwwroot", existing.ReceiptImagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-                    if (System.IO.File.Exists(old)) System.IO.File.Delete(old);
-                }
-                catch { }
-            }
-
+            DeleteFile(existing.ReceiptImagePath);
             _applianceRepo.Delete(id);
+
+            TempData["SuccessMessage"] = "Appliance deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
 
+        // ===============================
+        // Helpers
+        // ===============================
+
+        private DateTime CalculateWarrantyEndDate(DateTime purchaseDate, int months)
+        {
+            if (months > 0)
+                return purchaseDate.AddMonths(months);
+
+            // if no warranty → store purchase date as end date
+            return purchaseDate;
+        }
+
+        private int CalculateMonths(DateTime start, DateTime end)
+        {
+            if (end < start) return 0;
+            int months = (end.Year - start.Year) * 12 + end.Month - start.Month;
+            if (end.Day < start.Day) months--;
+            return Math.Max(0, months);
+        }
+
+        private string SaveReceipt(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var allowed = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            const long maxBytes = 5 * 1024 * 1024;
+
+            if (!allowed.Contains(ext))
+            {
+                ModelState.AddModelError("ReceiptFile", "Only JPG, PNG or PDF files are allowed.");
+                return null;
+            }
+
+            if (file.Length > maxBytes)
+            {
+                ModelState.AddModelError("ReceiptFile", "File too large (max 5 MB).");
+                return null;
+            }
+
+            var uploadsRoot = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "receipts");
+            if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
+
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var filePath = Path.Combine(uploadsRoot, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                file.CopyTo(stream);
+            }
+
+            return Path.Combine("/uploads/receipts", fileName).Replace('\\', '/');
+        }
+
+        private void DeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+
+            try
+            {
+                var fullPath = Path.Combine(_env.WebRootPath ?? "wwwroot", path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                if (System.IO.File.Exists(fullPath)) System.IO.File.Delete(fullPath);
+            }
+            catch { }
+        }
     }
 }

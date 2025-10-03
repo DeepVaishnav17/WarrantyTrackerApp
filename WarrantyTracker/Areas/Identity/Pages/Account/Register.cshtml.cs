@@ -48,6 +48,7 @@ namespace WarrantyTracker.Areas.Identity.Pages.Account
         {
             [Required(ErrorMessage = "Please enter your full name.")]
             [StringLength(100, ErrorMessage = "Full name cannot be longer than 100 characters.")]
+            [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "Full name can only contain letters and spaces")]
             [Display(Name = "Full Name")]
             public string FullName { get; set; }
 
@@ -59,7 +60,7 @@ namespace WarrantyTracker.Areas.Identity.Pages.Account
             public string Address { get; set; }
 
             [Display(Name = "Phone Number")]
-            [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Please enter a valid 10-digit mobile number.")]
+            [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Enter a valid 10-digit mobile number starting with 6-9.")]
             public string PhoneNumber { get; set; }
 
             [Required(ErrorMessage = "Password is required.")]
