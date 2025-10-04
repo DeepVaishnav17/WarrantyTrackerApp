@@ -7,7 +7,14 @@
 
 <h1>Admin Dashboard</h1>
 
+<!-- Inline top menu -->
 <div class="mb-4">
+    <div class="d-flex gap-3 mb-3">
+        <a href="#usersSection" class="btn btn-outline-primary col-md-4">👥 Users</a>
+        <a href="#appliancesSection" class="btn btn-outline-primary col-md-4">🔧 Appliances</a>
+        <a href="#chartsSection" class="btn btn-outline-primary col-md-4">📊 Quick Charts</a>
+    </div>
+
     <div class="row">
         <div class="col-md-4">
             <div class="card p-3">
@@ -32,40 +39,101 @@
 
 <hr />
 
-<h3>Users</h3>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Roles</th>
-        </tr>
-    </thead>
-    <tbody>
-        @for (int i = 0; i < Model.Users.Count; i++)
-        {
-            var u = Model.Users[i];
+<!-- Users Section -->
+<section id="usersSection">
+    <h3>Users</h3>
+    <table class="table table-striped">
+        <thead>
             <tr>
-                <td>@(i + 1)</td>
-                <td>@u.FullName</td>
-                <td>@u.Email</td>
-                <td>@u.PhoneNumber</td>
-                <td>--</td>
+                <th>#</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Roles</th>
+                <th>Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Users.Count; i++)
+            {
+                var u = Model.Users[i];
+                <tr>
+                    <td>@(i + 1)</td>
+                    <td>@u.FullName</td>
+                    <td>@u.Email</td>
+                    <td>@u.PhoneNumber</td>
+                    <td>@(Model.UserRoles.ContainsKey(u.Id) ? Model.UserRoles[u.Id] : "No Role")</td>
+                    <td>
+                        @if (!Model.UserRoles[u.Id].Contains("Admin"))
+                        {
+                            <form asp-action="DeleteUser" asp-controller="Admin" method="post" style="display:inline">
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Are you sure you want to remove this user?');">
+                                    Remove
+                                </button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
 
 <hr />
 
-<h3>Quick Charts</h3>
-<div class="row">
-    <div class="col-md-6">
-        <canvas id="summaryChart"></canvas>
+<!-- Appliances Section -->
+<section id="appliancesSection">
+    <h3>Appliances</h3>
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Appliance Name</th>
+                <th>Model</th>
+                <th>Associated User</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Appliances.Count; i++)
+            {
+                var a = Model.Appliances[i];
+                <tr>
+                    <td>@(i + 1)</td>
+                    <td>@a.Name</td>
+                    <td>@a.Model</td>
+
+                    <td>@(a.User != null ? a.User.FullName : "No User")</td>
+                    <td>
+                        <a asp-action="ViewAppliance" asp-controller="Admin" asp-route-id="@a.Id"
+                           class="btn btn-sm btn-primary">View</a>
+                        <form asp-action="DeleteAppliance" asp-controller="Admin" method="post" style="display:inline">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Are you sure you want to remove this appliance?');">
+                                Remove
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<hr />
+
+<!-- Charts Section -->
+<section id="chartsSection">
+    <h3>Quick Charts</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <canvas id="summaryChart"></canvas>
+        </div>
     </div>
-</div>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>

@@ -1,0 +1,140 @@
+﻿@model WarrantyTracker.Models.Appliance
+
+@{
+    ViewData["Title"] = "Appliance Details";
+}
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3>Appliance Details</h3>
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-3">
+                <!-- Appliance Info -->
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-5">Appliance Name:</dt>
+                        <dd class="col-sm-7">@Model.Name</dd>
+
+                        <dt class="col-sm-5">Brand:</dt>
+                        <dd class="col-sm-7">@Model.Brand</dd>
+
+                        <dt class="col-sm-5">Model:</dt>
+                        <dd class="col-sm-7">@Model.Model</dd>
+
+                        <dt class="col-sm-5">Serial Number:</dt>
+                        <dd class="col-sm-7">@Model.Id</dd>
+
+                        <dt class="col-sm-5">Associated User:</dt>
+                        <dd class="col-sm-7">@Model.User?.FullName (@Model.User?.Email)</dd>
+
+                        <dt class="col-sm-5">Purchase Date:</dt>
+                        <dd class="col-sm-7">@Model.PurchaseDate.ToString("dd MMM yyyy")</dd>
+
+                        <dt class="col-sm-5">Warranty Period (Months):</dt>
+                        <dd class="col-sm-7">@Model.WarrantyPeriodMonths</dd>
+
+                        <dt class="col-sm-5">Warranty End Date:</dt>
+                        <dd class="col-sm-7">@Model.WarrantyEndDate.ToString("dd MMM yyyy")</dd>
+
+                        <dt class="col-sm-5">Warranty Status:</dt>
+                        <dd class="col-sm-7">
+                            @{
+                                var status = Appliance.CalculateWarrantyStatus(Model.WarrantyEndDate, Model.WarrantyPeriodMonths);
+                                string badgeClass = status switch
+                                {
+                                    "Active" => "bg-success",
+                                    "Expiring Soon" => "bg-warning text-dark",
+                                    "Expired" => "bg-danger",
+                                    "No Warranty" => "bg-secondary",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @badgeClass">@status</span>
+                        </dd>
+
+                        <dt class="col-sm-5">Purchase Price:</dt>
+                        <dd class="col-sm-7">@Model.PurchasePrice?.ToString("C")</dd>
+                    </dl>
+                </div>
+
+                <!-- Receipt Image -->
+                <div class="col-md-6 text-center">
+                    @if (!string.IsNullOrEmpty(Model.ReceiptImagePath))
+                    {
+                        <img src="@Url.Content(Model.ReceiptImagePath)" class="img-fluid border rounded shadow-sm" style="max-height: 300px;" alt="Receipt Image" />
+                    }
+                    else
+                    {
+                        <div class="border rounded d-flex align-items-center justify-content-center" style="height: 300px;">
+                            <span class="text-muted">No Receipt Image</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Associated Service Records -->
+            <hr />
+            <h4>Service Records</h4>
+            @if (Model.ServiceRecords != null && Model.ServiceRecords.Any())
+            {
+                <table class="table table-bordered table-hover mt-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Service Date</th>
+                            <th>Vendor Name</th>
+                            <th>Vendor Contact</th>
+                            <th>Cost</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.ServiceRecords.Count; i++)
+                        {
+                            var s = Model.ServiceRecords.ElementAt(i);
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>@s.ServiceDate.ToString("dd MMM yyyy")</td>
+                                <td>@s.VendorName</td>
+                                <td>@s.VendorContact</td>
+                                <td>@s.Cost.ToString("C")</td>
+                                <td>@s.Notes</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">No service records available for this appliance.</p>
+            }
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="card-footer d-flex justify-content-between">
+            <a asp-action="Index" asp-controller="Admin" class="btn btn-secondary">← Back to Dashboard</a>
+
+            <form asp-action="DeleteAppliance" asp-controller="Admin" method="post" onsubmit="return confirm('Are you sure you want to remove this appliance?');">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-danger">Delete Appliance</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    dt {
+        font-weight: 600;
+    }
+
+    dd {
+        margin-bottom: 0.75rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+</style>

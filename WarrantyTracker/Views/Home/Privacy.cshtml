@@ -1,6 +1,94 @@
 ﻿@{
     ViewData["Title"] = "Privacy Policy";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<style>
+    .privacy-container {
+        max-width: 900px;
+        margin: 40px auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .privacy-container h1 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    .privacy-container h3 {
+        margin-top: 25px;
+        color: #34495e;
+    }
+
+    .privacy-container p,
+    .privacy-container li {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #555;
+    }
+
+    .privacy-container ul {
+        margin-left: 20px;
+    }
+
+    .privacy-container .last-updated {
+        margin-top: 30px;
+        font-size: 13px;
+        color: gray;
+    }
+</style>
+
+<div class="privacy-container">
+    <h1>@ViewData["Title"]</h1>
+
+    <p>
+        Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our application.
+    </p>
+
+    <h3>1. Information We Collect</h3>
+    <ul>
+        <li>Personal details you provide (such as name, email, student ID)</li>
+        <li>Usage data (such as pages visited, login time, attendance records)</li>
+        <li>Device and browser information</li>
+    </ul>
+
+    <h3>2. How We Use Your Information</h3>
+    <ul>
+        <li>Managing attendance and academic records</li>
+        <li>Improving system performance and user experience</li>
+        <li>Ensuring system security and preventing unauthorized access</li>
+    </ul>
+
+    <h3>3. Data Protection</h3>
+    <p>
+        We implement appropriate technical and organizational measures to safeguard your data against unauthorized access, alteration, disclosure, or destruction.
+    </p>
+
+    <h3>4. Sharing of Information</h3>
+    <p>
+        We do not sell or rent your personal information. Data may only be shared with authorized faculty or administrators for academic and administrative purposes.
+    </p>
+
+    <h3>5. User Rights</h3>
+    <ul>
+        <li>Access your personal data</li>
+        <li>Request corrections to inaccurate data</li>
+        <li>Request deletion of your data (subject to institutional policies)</li>
+    </ul>
+
+    <h3>6. Policy Updates</h3>
+    <p>
+        This Privacy Policy may be updated periodically. Changes will be reflected on this page with an updated revision date.
+    </p>
+
+   
+
+    <p class="last-updated">
+        Last Updated: @DateTime.Now.ToString("MMMM dd, yyyy")
+    </p>
+</div>
