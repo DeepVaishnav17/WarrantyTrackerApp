@@ -50,6 +50,8 @@ namespace WarrantyTracker
 
             services.AddScoped<IApplianceRepository, SQLApplianceRepository>();
             services.AddScoped<IServiceRecordRepository, SQLServiceRecordRepository>();
+
+            // For notification purpose
             services.AddSignalR(); // Add SignalR
             services.AddScoped<INotificationService, NotificationService>();
 

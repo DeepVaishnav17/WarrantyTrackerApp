@@ -33,16 +33,16 @@
                         <dt class="col-sm-5">Purchase Date:</dt>
                         <dd class="col-sm-7">@Model.PurchaseDate.ToString("dd MMM yyyy")</dd>
 
-                        <dt class="col-sm-5">Warranty Period (Months):</dt>
-                        <dd class="col-sm-7">@Model.WarrantyPeriodMonths</dd>
+                        @* <dt class="col-sm-5">Warranty Period (Months):</dt> *@
+                        @* <dd class="col-sm-7">@Model.WarrantyPeriodMonths</dd> *@
 
                         <dt class="col-sm-5">Warranty End Date:</dt>
                         <dd class="col-sm-7">@Model.WarrantyEndDate.ToString("dd MMM yyyy")</dd>
 
                         <dt class="col-sm-5">Warranty Status:</dt>
-                        <dd class="col-sm-7">
+                        <dd class="col-sm-7"> 
                             @{
-                                var status = Appliance.CalculateWarrantyStatus(Model.WarrantyEndDate, Model.WarrantyPeriodMonths);
+                                var status = @Model.LastWarrantyStatus;
                                 string badgeClass = status switch
                                 {
                                     "Active" => "bg-success",
@@ -52,7 +52,8 @@
                                     _ => "bg-secondary"
                                 };
                             }
-                            <span class="badge @badgeClass">@status</span>
+                            <span class="badge @badgeClass">@status</span> 
+                                
                         </dd>
 
                         <dt class="col-sm-5">Purchase Price:</dt>

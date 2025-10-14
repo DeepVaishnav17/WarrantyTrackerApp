@@ -1,6 +1,6 @@
 using System;
 
-namespace WarrantyTracker.Models
+namespace WarrantyTracker.ViewModels
 {
     public class ErrorViewModel
     {
